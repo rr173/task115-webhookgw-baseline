@@ -151,7 +151,7 @@ func (m *Manager) deliver(ctx context.Context, a *model.Attempt) {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Webhook-Event", a.EventType)
 	req.Header.Set("X-Webhook-Attempt", fmt.Sprintf("%d", a.AttemptCount+1))
-	req.Header.Set("X-Webhook-Signature", Sign(sub.Name, body))
+	req.Header.Set("X-Webhook-Signature", Sign(sub.SigningSecret, body))
 
 	resp, err := m.client.Do(req)
 	if err != nil {
