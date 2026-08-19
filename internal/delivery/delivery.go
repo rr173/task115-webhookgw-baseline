@@ -180,12 +180,13 @@ func (m *Manager) fail(a *model.Attempt, reason string) {
 	a.LastError = reason
 
 	sub, _ := m.store.GetSubscription(a.SubscriptionID)
-	maxAttempts := 0
+	maxAttempts := 5
 	base, max := time.Second, 30*time.Second
 	if sub != nil {
-		maxAttempts = sub.RetryPolicy.MaxAttempts
-		base = sub.RetryPolicy.BaseDelay
-		max = sub.RetryPolicy.MaxDelay
+		policy := sub.RetryPolicy.Normalized()
+		maxAttempts = policy.MaxAttempts
+		base = policy.BaseDelay
+		max = policy.MaxDelay
 	}
 
 	// A non-retryable HTTP status (e.g. 4xx except 429) should be moved

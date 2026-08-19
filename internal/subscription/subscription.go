@@ -35,6 +35,7 @@ func (s *Service) Create(name, endpoint string, events []string, rateLimit int, 
 	if _, err := url.ParseRequestURI(endpoint); err != nil {
 		return nil, fmt.Errorf("invalid endpoint URL: %w", err)
 	}
+	policy = policy.Normalized()
 	now := s.clk.Now()
 	sub := &model.Subscription{
 		ID:            uuid.NewString(),
