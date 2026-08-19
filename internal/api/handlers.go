@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -292,7 +291,7 @@ func (a *API) deleteDeadLetter(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) dispatch(w http.ResponseWriter, r *http.Request) {
-	if err := a.delivery.Dispatch(context.Background()); err != nil {
+	if err := a.delivery.Dispatch(r.Context()); err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}

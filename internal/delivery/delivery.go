@@ -85,8 +85,8 @@ func (m *Manager) ListEvents(limit int) ([]*model.Event, error) {
 // Dispatch delivers every due attempt concurrently. It blocks until all
 // attempts for this pass complete.
 func (m *Manager) Dispatch(ctx context.Context) error {
-	if ctx == nil {
-		ctx = context.Background()
+	if err := ctx.Err(); err != nil {
+		return err
 	}
 	due, err := m.collectDue(0)
 	if err != nil {
