@@ -190,7 +190,7 @@ func (m *Manager) fail(a *model.Attempt, reason string) {
 
 	// A non-retryable HTTP status (e.g. 4xx except 429) should be moved
 	// straight to the dead-letter queue instead of being retried.
-	if code, ok := httpStatusFromReason(reason); ok && !isRetryable(code) {
+	if code, ok := httpStatusFromReason(reason); ok && !ShouldRetry(code) {
 		m.deadLetter(a, reason)
 		return
 	}
