@@ -43,8 +43,8 @@ func (m *Metrics) RecordDelivered(subID string) {
 func (m *Metrics) RecordFailed(subID string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.total.Failed++
-	m.sub(subID).Failed++
+	m.total.DeadLettered++
+	m.sub(subID).DeadLettered++
 }
 
 // RecordDeadLetter increments the dead-letter counters.

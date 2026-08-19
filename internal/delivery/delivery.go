@@ -203,7 +203,7 @@ func (m *Manager) fail(a *model.Attempt, reason string) {
 	a.NextAttemptAt = m.clk.Now().Add(retryDelay(base, max, a.AttemptCount))
 	a.UpdatedAt = m.clk.Now()
 	_ = m.store.UpdateAttempt(a)
-	m.metrics.RecordFailed(a.SubscriptionID)
+	m.metrics.RecordDeadLetter(a.SubscriptionID)
 }
 
 func (m *Manager) deadLetter(a *model.Attempt, reason string) {
