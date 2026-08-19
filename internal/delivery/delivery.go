@@ -38,7 +38,7 @@ func New(s *store.Store, subs *subscription.Service, m *metrics.Metrics, clk clo
 	if client == nil {
 		client = http.DefaultClient
 	}
-	return &Manager{store: s, subs: subs, metrics: m, clk: clk, client: client, rl: newRateLimiter(time.Now)}
+	return &Manager{store: s, subs: subs, metrics: m, clk: clk, client: client, rl: newRateLimiter(clk)}
 }
 
 // Enqueue creates one pending attempt per subscription that matches the event

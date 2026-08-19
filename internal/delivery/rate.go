@@ -3,6 +3,8 @@ package delivery
 import (
 	"sync"
 	"time"
+
+	"webhookgw/internal/clock"
 )
 
 // rateLimiter is a per-subscription token-bucket limiter. A limit of 0 or less
@@ -15,11 +17,11 @@ type rateLimiter struct {
 	now   func() time.Time
 }
 
-func newRateLimiter(now func() time.Time) *rateLimiter {
+func newRateLimiter(clk clock.Clock) *rateLimiter {
 	return &rateLimiter{
 		last:  make(map[string]time.Time),
 		limit: make(map[string]int),
-		now:   now,
+		now:   clk.Now,
 	}
 }
 
