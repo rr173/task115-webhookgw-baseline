@@ -216,7 +216,7 @@ func (m *Manager) deadLetter(a *model.Attempt, reason string) {
 		EventType:      a.EventType,
 		Payload:        a.Payload,
 		Reason:         reason,
-		AttemptCount:   a.AttemptCount - 1,
+		AttemptCount:   a.AttemptCount,
 		CreatedAt:      m.clk.Now(),
 	})
 	m.metrics.RecordDeadLetter(a.SubscriptionID)

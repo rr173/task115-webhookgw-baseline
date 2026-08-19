@@ -81,7 +81,6 @@ func (s *Service) ReplayDeadLetter(attemptID string) error {
 	if a == nil {
 		return nil
 	}
-	a.AttemptCount = 0
 	a.Status = model.StatusPending
 	a.NextAttemptAt = time.Now()
 	a.UpdatedAt = time.Now()
