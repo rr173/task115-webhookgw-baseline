@@ -276,7 +276,7 @@ func (s *Store) ListAttempts(f model.AttemptFilter) ([]*model.Attempt, int, erro
 }
 
 func (s *Store) PendingAttempts() ([]*model.Attempt, error) {
-	rows, err := s.query(`SELECT id,subscription_id,event_id,event_type,payload,status,attempt_count,last_error,next_attempt_at,created_at,updated_at FROM attempts WHERE status=? ORDER BY next_attempt_at ASC`, string(model.StatusPending))
+	rows, err := s.query(`SELECT id,subscription_id,event_id,event_type,payload,status,attempt_count,last_error,next_attempt_at,created_at,updated_at FROM attempts WHERE status IN (?,?) ORDER BY next_attempt_at ASC`, string(model.StatusPending), string(model.StatusInFlight))
 	if err != nil {
 		return nil, err
 	}

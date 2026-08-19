@@ -232,7 +232,7 @@ func (m *Manager) Recover() (int, error) {
 	n := 0
 	now := m.clk.Now()
 	for _, a := range rows {
-		if a.Status != model.StatusPending {
+		if a.Status != model.StatusInFlight {
 			continue
 		}
 		a.Status = model.StatusPending
