@@ -1,5 +1,5 @@
 # 官方 Go 镜像，自带完整工具链
-FROM golang:1.26.3
+FROM docker.m.daocloud.io/library/golang:1.26.3-bookworm
 
 WORKDIR /app
 
