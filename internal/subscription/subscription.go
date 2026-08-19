@@ -123,7 +123,7 @@ func (s *Service) Matches(sub *model.Subscription, eventType string) bool {
 		return true
 	}
 	for _, e := range sub.Events {
-		if e == eventType {
+		if strings.EqualFold(e, eventType) {
 			return true
 		}
 	}

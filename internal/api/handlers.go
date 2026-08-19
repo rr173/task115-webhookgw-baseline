@@ -187,7 +187,7 @@ func (a *API) ingestEvent(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "event type is required"})
 		return
 	}
-	req.Type = strings.TrimSpace(req.Type)
+	req.Type = strings.ToLower(strings.TrimSpace(req.Type))
 	ev := &model.Event{ID: uuid.NewString(), Type: req.Type, Payload: req.Payload, CreatedAt: time.Now()}
 	if err := a.saveEvent(ev); err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
