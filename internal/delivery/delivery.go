@@ -188,9 +188,10 @@ func (m *Manager) fail(a *model.Attempt, reason string) {
 		max = sub.RetryPolicy.MaxDelay
 	}
 
-	// A non-retryable HTTP status (e.g. 4xx except 429) should be moved
-	// straight to the dead-letter queue instead of being retried.
-	if code, ok := httpStatusFromReason(reason); ok && !isRetryable(code) {
+	// A non-retryable HTTP status is moved straight to the dead-letter queue.
+	// Transient statuses covered by ShouldRetry (408, 425 Too Early, 429, 5xx)
+	// instead consume a retry attempt under the subscription's retry policy.
+	if code, ok := httpStatusFromReason(reason); ok && !ShouldRetry(code) {
 		m.deadLetter(a, reason)
 		return
 	}
@@ -259,9 +260,4 @@ func retryDelay(base, max time.Duration, attempt int) time.Duration {
 		return max
 	}
 	return d
-}
-
-// isRetryable reports whether an HTTP status code is worth retrying.
-func isRetryable(code int) bool {
-	return code >= 500 && code < 600
 }
