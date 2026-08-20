@@ -209,6 +209,10 @@ func (m *Manager) fail(a *model.Attempt, reason string) {
 func (m *Manager) deadLetter(a *model.Attempt, reason string) {
 	a.Status = model.StatusDeadLetter
 	a.UpdatedAt = m.clk.Now()
+	// Record the full number of deliveries that occurred before the message
+	// entered the dead-letter queue; a.AttemptCount already reflects every
+	// attempt that was made, so it must not be decremented or the dead letter
+	// would undercount the deliveries (and lose history on replay).
 	_ = m.store.UpdateAttempt(a)
 	_ = m.store.SaveDeadLetter(&model.DeadLetter{
 		AttemptID:      a.ID,
@@ -216,7 +220,7 @@ func (m *Manager) deadLetter(a *model.Attempt, reason string) {
 		EventType:      a.EventType,
 		Payload:        a.Payload,
 		Reason:         reason,
-		AttemptCount:   a.AttemptCount - 1,
+		AttemptCount:   a.AttemptCount,
 		CreatedAt:      m.clk.Now(),
 	})
 	m.metrics.RecordDeadLetter(a.SubscriptionID)

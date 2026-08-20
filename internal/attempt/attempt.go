@@ -72,7 +72,8 @@ func (s *Service) DeadLetters() ([]*model.DeadLetter, error) {
 }
 
 // ReplayDeadLetter requeues the attempt behind a dead-letter entry and removes
-// it from the queue.
+// it from the queue. It preserves the prior attempt history so subsequent
+// deliveries build on the cumulative count rather than restarting from zero.
 func (s *Service) ReplayDeadLetter(attemptID string) error {
 	a, err := s.store.GetAttempt(attemptID)
 	if err != nil {
@@ -81,7 +82,6 @@ func (s *Service) ReplayDeadLetter(attemptID string) error {
 	if a == nil {
 		return nil
 	}
-	a.AttemptCount = 0
 	a.Status = model.StatusPending
 	a.NextAttemptAt = time.Now()
 	a.UpdatedAt = time.Now()
