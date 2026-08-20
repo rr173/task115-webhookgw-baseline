@@ -183,9 +183,14 @@ func (m *Manager) fail(a *model.Attempt, reason string) {
 	maxAttempts := 0
 	base, max := time.Second, 30*time.Second
 	if sub != nil {
-		maxAttempts = sub.RetryPolicy.MaxAttempts
-		base = sub.RetryPolicy.BaseDelay
-		max = sub.RetryPolicy.MaxDelay
+		// Normalize so a zero-value policy (e.g. a subscription registered
+		// before defaults were applied at creation, or one reloaded after a
+		// restart) is treated as the shared default instead of dead-lettering
+		// on the first failure where AttemptCount(1) >= MaxAttempts(0).
+		p := sub.RetryPolicy.Normalized()
+		maxAttempts = p.MaxAttempts
+		base = p.BaseDelay
+		max = p.MaxDelay
 	}
 
 	// A non-retryable HTTP status (e.g. 4xx except 429) should be moved

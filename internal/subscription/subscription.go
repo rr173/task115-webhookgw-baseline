@@ -43,7 +43,12 @@ func (s *Service) Create(name, endpoint string, events []string, rateLimit int, 
 		Events:        normalizeEvents(events),
 		SigningSecret: randomSecret(),
 		RateLimit:     rateLimit,
-		RetryPolicy:   policy,
+		// Normalize so a subscription registered without explicit retry
+		// parameters persists with the default policy rather than zeroes —
+		// otherwise a restart would load a zero-value policy whose failed
+		// deliveries dead-letter on the first attempt. Mirrors Update so new
+		// and restored subscriptions share the same default strategy.
+		RetryPolicy:   policy.Normalized(),
 		CreatedAt:     now,
 		UpdatedAt:     now,
 	}
