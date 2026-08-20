@@ -42,8 +42,12 @@ func New(s *store.Store, subs *subscription.Service, m *metrics.Metrics, clk clo
 }
 
 // Enqueue creates one pending attempt per subscription that matches the event
-// type. It returns the number of attempts created.
+// type. It returns the number of attempts created. The event type is
+// canonicalized so the persisted attempt's event_type (and the outbound
+// X-Webhook-Event header) agrees with how the event was stored and matched,
+// regardless of the casing the caller supplied.
 func (m *Manager) Enqueue(ev *model.Event) (int, error) {
+	eventType := model.CanonicalEventType(ev.Type)
 	subs, err := m.subs.List()
 	if err != nil {
 		return 0, err
@@ -51,14 +55,14 @@ func (m *Manager) Enqueue(ev *model.Event) (int, error) {
 	now := m.clk.Now()
 	n := 0
 	for _, sub := range subs {
-		if !m.subs.Matches(sub, ev.Type) {
+		if !m.subs.Matches(sub, eventType) {
 			continue
 		}
 		a := &model.Attempt{
 			ID:             uuid.NewString(),
 			SubscriptionID: sub.ID,
 			EventID:        ev.ID,
-			EventType:      ev.Type,
+			EventType:      eventType,
 			Payload:        ev.Payload,
 			Status:         model.StatusPending,
 			AttemptCount:   0,

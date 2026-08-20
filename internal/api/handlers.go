@@ -187,7 +187,10 @@ func (a *API) ingestEvent(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "event type is required"})
 		return
 	}
-	req.Type = strings.TrimSpace(req.Type)
+	// Canonicalize the event type before it is stored or matched so a partner
+	// sending "Order.Created" is treated the same as one sending "order.created"
+	// (see model.CanonicalEventType).
+	req.Type = model.CanonicalEventType(req.Type)
 	ev := &model.Event{ID: uuid.NewString(), Type: req.Type, Payload: req.Payload, CreatedAt: time.Now()}
 	if err := a.saveEvent(ev); err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})

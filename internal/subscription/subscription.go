@@ -117,26 +117,33 @@ func (s *Service) RotateSecret(id string) (*model.Subscription, error) {
 }
 
 // Matches reports whether a subscription should receive an event of eventType.
-// An empty Events list means the subscription receives all event types.
+// An empty Events list means the subscription receives all event types. The
+// incoming eventType is canonicalized so a subscription stored for one casing
+// still matches an event arriving in another (see model.CanonicalEventType).
 func (s *Service) Matches(sub *model.Subscription, eventType string) bool {
 	if len(sub.Events) == 0 {
 		return true
 	}
+	want := model.CanonicalEventType(eventType)
 	for _, e := range sub.Events {
-		if e == eventType {
+		if e == want {
 			return true
 		}
 	}
 	return false
 }
 
+// normalizeEvents canonicalizes subscription event types so they are stored and
+// matched under one case rule (see model.CanonicalEventType). Blank entries are
+// dropped; duplicate detection is left to Subscription.Validate.
 func normalizeEvents(events []string) []string {
 	out := make([]string, 0, len(events))
 	for _, e := range events {
-		e = strings.TrimSpace(e)
-		if e != "" {
-			out = append(out, strings.ToLower(e))
+		c := model.CanonicalEventType(e)
+		if c == "" {
+			continue
 		}
+		out = append(out, c)
 	}
 	return out
 }
