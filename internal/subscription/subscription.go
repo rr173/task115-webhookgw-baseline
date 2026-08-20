@@ -108,10 +108,9 @@ func (s *Service) RotateSecret(id string) (*model.Subscription, error) {
 	if sub == nil {
 		return nil, fmt.Errorf("subscription %s not found", id)
 	}
-	oldSecret := sub.SigningSecret
 	sub.SigningSecret = randomSecret()
 	sub.UpdatedAt = s.clk.Now()
-	if err := s.store.RotateSecret(id, oldSecret, sub.UpdatedAt); err != nil {
+	if err := s.store.RotateSecret(id, sub.SigningSecret, sub.UpdatedAt); err != nil {
 		return nil, err
 	}
 	return sub, nil
