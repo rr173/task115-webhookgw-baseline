@@ -47,12 +47,15 @@ func (m *Metrics) RecordFailed(subID string) {
 	m.sub(subID).Failed++
 }
 
-// RecordDeadLetter increments the dead-letter counters.
+// RecordDeadLetter increments the dead-letter counters. A delivery that is
+// permanently rejected (non-retryable HTTP status) or has exhausted its retry
+// budget is recorded here, separately from RecordFailed, so the statistics
+// page can distinguish permanent rejections from retryable failures.
 func (m *Metrics) RecordDeadLetter(subID string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.total.Failed++
-	m.sub(subID).Failed++
+	m.total.DeadLettered++
+	m.sub(subID).DeadLettered++
 }
 
 // IncInFlight / DecInFlight track in-flight deliveries.

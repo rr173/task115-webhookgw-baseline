@@ -219,7 +219,9 @@ func (m *Manager) deadLetter(a *model.Attempt, reason string) {
 		AttemptCount:   a.AttemptCount,
 		CreatedAt:      m.clk.Now(),
 	})
-	m.metrics.RecordFailed(a.SubscriptionID)
+	// Count dead-lettered deliveries as permanent rejections, not as retryable
+	// failures, so the statistics page keeps the two populations separate.
+	m.metrics.RecordDeadLetter(a.SubscriptionID)
 }
 
 // Recover resets attempts that were in-flight when the process last stopped so
