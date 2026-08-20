@@ -38,7 +38,10 @@ func New(s *store.Store, subs *subscription.Service, m *metrics.Metrics, clk clo
 	if client == nil {
 		client = http.DefaultClient
 	}
-	return &Manager{store: s, subs: subs, metrics: m, clk: clk, client: client, rl: newRateLimiter(time.Now)}
+	// The rate-limit window must share the Manager's controllable clock so
+	// that advancing the clock (e.g. a FakeClock in tests) moves the window
+	// in lockstep with NextAttemptAt and retry backoff, which both use clk.
+	return &Manager{store: s, subs: subs, metrics: m, clk: clk, client: client, rl: newRateLimiter(clk.Now)}
 }
 
 // Enqueue creates one pending attempt per subscription that matches the event
