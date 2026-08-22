@@ -82,15 +82,16 @@ type AttemptFilter struct {
 }
 
 // PageBounds converts the 1-based Page/PageSize into SQL offset/limit, applying
-// sane defaults and clamping.
+// sane defaults and clamping. Page 1 maps to offset 0 so the first page starts
+// at the beginning of the result set, not one page in.
 func (f AttemptFilter) PageBounds() (offset, limit int) {
 	if f.PageSize <= 0 {
 		limit = 20
 	} else {
 		limit = f.PageSize
 	}
-	if f.Page <= 0 {
+	if f.Page <= 1 {
 		return 0, limit
 	}
-	return f.Page * limit, limit
+	return (f.Page - 1) * limit, limit
 }

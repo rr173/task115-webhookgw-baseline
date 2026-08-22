@@ -258,7 +258,10 @@ func (s *Store) ListAttempts(f model.AttemptFilter) ([]*model.Attempt, int, erro
 	totalRows.Close()
 
 	offset, limit := f.PageBounds()
-	q := `SELECT id,subscription_id,event_id,event_type,payload,status,attempt_count,last_error,next_attempt_at,created_at,updated_at FROM attempts` + where + ` ORDER BY created_at ASC LIMIT ? OFFSET ?`
+	// Newest first: page 1 returns the most recent deliveries, and the tie-
+	// breaker on id keeps the order (and thus pagination) stable across rows
+	// that share a created_at millisecond.
+	q := `SELECT id,subscription_id,event_id,event_type,payload,status,attempt_count,last_error,next_attempt_at,created_at,updated_at FROM attempts` + where + ` ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?`
 	rows, err := s.query(q, append(args, limit, offset)...)
 	if err != nil {
 		return nil, 0, err

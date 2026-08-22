@@ -1,6 +1,7 @@
 package store
 
 import (
+	"fmt"
 	"path/filepath"
 	"testing"
 	"time"
@@ -113,5 +114,86 @@ func TestEventSaveList(t *testing.T) {
 	}
 	if len(evs) != 1 {
 		t.Fatalf("events: %d", len(evs))
+	}
+}
+
+// TestAttemptListPaginationNewestFirst pins the pagination contract for the
+// delivery log: page 1 must return the most recent attempts first, and pages
+// must be contiguous — walking page 1..N yields every row exactly once in
+// strict newest-to-oldest order. A regression here surfaces as the first page
+// starting mid-history and the newest deliveries never appearing until the
+// last page.
+func TestAttemptListPaginationNewestFirst(t *testing.T) {
+	st := mustOpen(t)
+	defer st.Close()
+	base := time.Now().Truncate(time.Millisecond)
+	// Insert 5 attempts with strictly increasing created_at / id so the
+	// newest is unambiguously the last-inserted one.
+	const n = 5
+	for i := 0; i < n; i++ {
+		a := &model.Attempt{
+			ID:             fmt.Sprintf("a%d", i),
+			SubscriptionID: "s1",
+			EventID:        "e",
+			EventType:      "t",
+			Payload:        "{}",
+			Status:         model.StatusDelivered,
+			AttemptCount:   1,
+			NextAttemptAt:  base,
+			CreatedAt:      base.Add(time.Duration(i) * time.Millisecond),
+			UpdatedAt:      base,
+		}
+		if err := st.SaveAttempt(a); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Page 1 (size 2) must lead with the newest attempt, not the oldest.
+	page1, total, err := st.ListAttempts(model.AttemptFilter{SubscriptionID: "s1", Page: 1, PageSize: 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if total != n {
+		t.Fatalf("total: got %d want %d", total, n)
+	}
+	if len(page1) != 2 {
+		t.Fatalf("page1 len: %d", len(page1))
+	}
+	if page1[0].ID != "a4" || page1[1].ID != "a3" {
+		t.Fatalf("page1 order: got %s,%s want a4,a3", page1[0].ID, page1[1].ID)
+	}
+
+	// Walk all pages; the concatenation must be exactly the full set with no
+	// gaps, no duplicates, and strictly descending created_at — i.e. the
+	// newest-first ordering is preserved across the page boundary.
+	var got []string
+	var prev time.Time
+	for page := 1; ; page++ {
+		items, _, err := st.ListAttempts(model.AttemptFilter{SubscriptionID: "s1", Page: page, PageSize: 2})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(items) == 0 {
+			break
+		}
+		for _, it := range items {
+			got = append(got, it.ID)
+			if !prev.IsZero() && !it.CreatedAt.Before(prev) {
+				t.Fatalf("page %d: %s created_at not descending", page, it.ID)
+			}
+			prev = it.CreatedAt
+		}
+		if len(got) >= n {
+			break
+		}
+	}
+	want := []string{"a4", "a3", "a2", "a1", "a0"}
+	if len(got) != n {
+		t.Fatalf("walked %d items, want %d", len(got), n)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("walk order at %d: got %s want %s", i, got[i], want[i])
+		}
 	}
 }
